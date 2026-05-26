@@ -1,0 +1,27 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Sphinx documentation
+docs/build/
+.doctrees/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Arduino / IDE related
+*.bak
+*.tmp
+
+# Sensitive data (though currently not used, good practice)
+.env
+*.local
