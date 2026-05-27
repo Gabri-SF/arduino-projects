@@ -1,0 +1,376 @@
+#include <WiFi.h>
+#include <WebServer.h>
+#include <math.h>
+
+
+
+// =========================
+// ACCESS POINT CONFIG
+// =========================
+
+const char* apSSID = "ESP32-ThermalMonitor";
+const char* apPassword = "12345678";
+
+WebServer server(80); // 
+// http://192.168.4.1/ is the default AP IP for the ESP32
+// the port 80 -> http://192.168.4.1/80 is the default port
+// WebServer server(8080) -> http://192.168.4.1/8080
+
+// =========================
+// PIN DEFINITIONS
+// =========================
+
+const int THERMISTOR_PIN = A0;
+
+const int RED_PIN   = 5;
+const int GREEN_PIN = 6;
+const int BLUE_PIN  = 7;
+
+// =========================
+// PWM CHANNELS
+// =========================
+
+const int RED_CHANNEL   = 0;
+const int GREEN_CHANNEL = 1;
+const int BLUE_CHANNEL  = 2;
+
+// =========================
+// THERMISTOR CONSTANTS
+// =========================
+
+const float SERIES_RESISTOR = 10000.0;
+const float NOMINAL_RESISTANCE = 10000.0;
+const float NOMINAL_TEMPERATURE = 25.0;
+const float B_COEFFICIENT = 3380.0;
+
+// =========================
+// EMA FILTER
+// =========================
+
+float filteredTemp = 25.0;
+const float ALPHA = 0.1;
+
+// =========================
+// TIMING
+// =========================
+
+unsigned long previousMillis = 0;
+const unsigned long SAMPLE_INTERVAL = 500;
+
+// =========================
+// GLOBAL VARIABLES
+// =========================
+
+float currentRawTemp = 0.0;
+
+// =========================
+// FUNCTION DECLARATIONS
+// =========================
+
+float readTemperature();
+float applyEMA(float newValue);
+void updateRGB(float temp);
+void sendPlotData(float rawTemp, float filteredTemp);
+void setupWebServer();
+void handleRoot();
+
+// =========================
+// SETUP
+// =========================
+
+void setup() {
+
+  Serial.begin(115200);
+
+  // ESP32 ADC resolution
+  analogReadResolution(12);
+
+  // RGB pins
+  pinMode(RED_PIN, OUTPUT);
+  pinMode(GREEN_PIN, OUTPUT);
+  pinMode(BLUE_PIN, OUTPUT);
+
+  // =========================
+  // PWM SETUP
+  // =========================
+
+  ledcSetup(RED_CHANNEL, 5000, 8);
+  ledcAttachPin(RED_PIN, RED_CHANNEL);
+
+  ledcSetup(GREEN_CHANNEL, 5000, 8);
+  ledcAttachPin(GREEN_PIN, GREEN_CHANNEL);
+
+  ledcSetup(BLUE_CHANNEL, 5000, 8);
+  ledcAttachPin(BLUE_PIN, BLUE_CHANNEL);
+
+  // =========================
+  // ACCESS POINT MODE
+  // =========================
+
+  WiFi.softAP(apSSID, apPassword);
+
+  IPAddress IP = WiFi.softAPIP();
+
+  Serial.println();
+  Serial.println("=================================");
+  Serial.println("ESP32 ACCESS POINT STARTED");
+  Serial.println("=================================");
+
+  Serial.print("SSID: ");
+  Serial.println(apSSID);
+
+  Serial.print("PASSWORD: ");
+  Serial.println(apPassword);
+
+  Serial.print("Dashboard URL: http://");
+  Serial.println(IP);
+
+  Serial.println("=================================");
+
+  // Start web server
+  setupWebServer();
+}
+
+// =========================
+// MAIN LOOP
+// =========================
+
+void loop() {
+
+  // Handle web requests
+  server.handleClient();
+
+  unsigned long currentMillis = millis();
+
+  // Non-blocking timing
+  if (currentMillis - previousMillis >= SAMPLE_INTERVAL) {
+
+    previousMillis = currentMillis;
+
+    // Read sensor
+    currentRawTemp = readTemperature();
+
+    // Apply filtering
+    filteredTemp = applyEMA(currentRawTemp);
+
+    // Update RGB LED
+    updateRGB(filteredTemp);
+
+    // Send Serial Plotter data
+    sendPlotData(currentRawTemp, filteredTemp);
+  }
+}
+
+// =========================
+// TEMPERATURE READING
+// =========================
+
+float readTemperature() {
+
+  int adcValue = analogRead(THERMISTOR_PIN);
+
+  float voltage = adcValue / 4095.0 * 3.3;
+
+  // Safety check
+  if (voltage <= 0.01) {
+    return -100.0;
+  }
+
+  // Calculate thermistor resistance
+  float resistance = SERIES_RESISTOR * (3.3 / voltage - 1.0);
+
+  // Beta equation
+  float temperature;
+
+  temperature = resistance / NOMINAL_RESISTANCE;
+  temperature = log(temperature);
+  temperature /= B_COEFFICIENT;
+  temperature += 1.0 / (NOMINAL_TEMPERATURE + 273.15);
+  temperature = 1.0 / temperature;
+  temperature -= 273.15;
+
+  return temperature;
+}
+
+// =========================
+// EMA FILTER
+// =========================
+
+float applyEMA(float newValue) {
+
+  return ALPHA * newValue + (1.0 - ALPHA) * filteredTemp;
+}
+
+// =========================
+// RGB TEMPERATURE VISUALIZER
+// =========================
+
+void updateRGB(float temp) {
+
+  int red = 0;
+  int green = 0;
+  int blue = 0;
+
+  // =========================
+  // BLUE -> GREEN
+  // =========================
+
+  if (temp <= 25.0) {
+
+    float ratio = temp / 25.0;
+
+    if (ratio < 0.0)
+      ratio = 0.0;
+
+    blue = 255 * (1.0 - ratio);
+    green = 255 * ratio;
+  }
+
+  // =========================
+  // GREEN -> RED
+  // =========================
+
+  else {
+
+    float ratio = (temp - 25.0) / 15.0;
+
+    if (ratio > 1.0)
+      ratio = 1.0;
+
+    green = 255 * (1.0 - ratio);
+    red = 255 * ratio;
+  }
+
+  // =========================
+  // WRITE PWM VALUES
+  // =========================
+
+  ledcWrite(RED_CHANNEL, red);
+  ledcWrite(GREEN_CHANNEL, green);
+  ledcWrite(BLUE_CHANNEL, blue);
+}
+
+// =========================
+// SERIAL PLOTTER OUTPUT
+// =========================
+
+void sendPlotData(float rawTemp, float filteredTemp) {
+
+  // Arduino Serial Plotter format
+
+  Serial.print(rawTemp);
+  Serial.print(",");
+
+  Serial.println(filteredTemp);
+}
+
+// =========================
+// WEB SERVER SETUP
+// =========================
+
+void setupWebServer() {
+
+  server.on("/", handleRoot);
+
+  server.begin();
+
+  Serial.println("Web server started");
+}
+
+// =========================
+// DASHBOARD PAGE
+// =========================
+
+void handleRoot() {
+
+  String html = R"rawliteral(
+
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>ESP32 Thermal Monitor</title>
+
+<meta http-equiv="refresh" content="2">
+
+<style>
+
+body {
+  background: #111;
+  color: white;
+  font-family: Arial;
+  text-align: center;
+  margin-top: 60px;
+}
+
+.card {
+  background: #222;
+  width: 340px;
+  margin: auto;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0px 0px 20px rgba(255,255,255,0.1);
+}
+
+.temp {
+  font-size: 72px;
+  font-weight: bold;
+}
+
+.status {
+  font-size: 26px;
+  margin-top: 20px;
+}
+
+.label {
+  margin-top: 20px;
+  font-size: 18px;
+  color: #aaa;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="card">
+
+<h1>ESP32 Thermal Monitor</h1>
+
+<div class="temp">
+)rawliteral";
+
+  html += String(filteredTemp, 1);
+
+  html += R"rawliteral(
+°C
+</div>
+
+<div class="status">
+)rawliteral";
+
+  if (filteredTemp < 20)
+    html += "COLD";
+  else if (filteredTemp < 30)
+    html += "NORMAL";
+  else
+    html += "HOT";
+
+  html += R"rawliteral(
+</div>
+
+<div class="label">
+Real-Time Embedded Thermal Monitoring
+</div>
+
+</div>
+
+</body>
+</html>
+
+)rawliteral";
+
+  server.send(200, "text/html", html);
+}

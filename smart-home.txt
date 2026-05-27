@@ -1,0 +1,146 @@
+#include <WiFi.h>
+#include <WiFiClientSecure.h>
+#include <PubSubClient.h>
+#include <math.h>
+
+// ==========================================
+// 1. CONFIGURAÇÕES
+// ==========================================
+const char* ssid = "";
+const char* password = "";
+
+const char* mqtt_server = ""; 
+const int mqtt_port = 8883;
+const char* mqtt_user = "";
+const char* mqtt_pass = "";
+
+const char* topic_luz_sala = "home/sala/luz";
+const char* topic_luz_cozinha = "home/cozinha/luz";
+const char* topic_led_quarto = "home/quarto/led";
+const char* topic_temp = "home/sensor/temperatura";
+const char* topic_status = "home/status/esp32";
+
+// ==========================================
+// 2. PINOS E CONSTANTES
+// ==========================================
+const int PIN_SALA = D8;
+const int PIN_COZINHA = D9;
+const int PIN_QUARTO = D10;
+const int THERMISTOR_PIN = A0;
+
+const int PWM_CHANNEL = 0;
+const int PWM_FREQ = 5000;
+const int PWM_RES = 8;
+
+const float SERIES_RESISTOR = 10000.0;
+const float NOMINAL_RESISTANCE = 10000.0;
+const float NOMINAL_TEMPERATURE = 25.0;
+const float B_COEFFICIENT = 3380.0;
+
+// Variáveis de tempo
+unsigned long lastTempMsg = 0;
+unsigned long lastReconnectAttempt = 0;
+const unsigned long TEMP_INTERVAL = 2000;
+const unsigned long RECONNECT_INTERVAL = 5000;
+
+WiFiClientSecure espClient;
+PubSubClient client(espClient);
+
+// ==========================================
+// 3. FUNÇÕES MQTT E TEMPERATURA
+// ==========================================
+void callback(char* topic, byte* payload, unsigned int length) {
+  String message = "";
+  for (int i = 0; i < length; i++) message += (char)payload[i];
+
+  if (String(topic) == topic_luz_sala) digitalWrite(PIN_SALA, message == "ON" ? HIGH : LOW);
+  else if (String(topic) == topic_luz_cozinha) digitalWrite(PIN_COZINHA, message == "ON" ? HIGH : LOW);
+  else if (String(topic) == topic_led_quarto) {
+    int brightness = map(message.toInt(), 0, 100, 0, 255);
+    ledcWrite(PWM_CHANNEL, brightness);
+  }
+}
+
+float readTemperature() {
+  int adcValue = analogRead(THERMISTOR_PIN);
+  float voltage = adcValue / 4095.0 * 3.3;
+  if (voltage <= 0.01) return -100.0;
+
+  float resistance = SERIES_RESISTOR * (3.3 / voltage - 1.0);
+
+  float steinhart =
+    log(resistance / NOMINAL_RESISTANCE) / B_COEFFICIENT +
+    1.0 / (NOMINAL_TEMPERATURE + 273.15);
+
+  return (1.0 / steinhart) - 273.15;
+}
+
+boolean connectMQTT() {
+  if (client.connect("ESP32_Nano_Client", mqtt_user, mqtt_pass,
+                     topic_status, 1, true, "OFFLINE")) {
+
+    client.publish(topic_status, "ONLINE", true);
+
+    client.subscribe(topic_luz_sala);
+    client.subscribe(topic_luz_cozinha);
+    client.subscribe(topic_led_quarto);
+  }
+
+  return client.connected();
+}
+
+// ==========================================
+// 4. SETUP E LOOP
+// ==========================================
+void setup() {
+  Serial.begin(115200);
+
+  analogReadResolution(12);
+
+  pinMode(PIN_SALA, OUTPUT);
+  pinMode(PIN_COZINHA, OUTPUT);
+
+  ledcSetup(PWM_CHANNEL, PWM_FREQ, PWM_RES);
+  ledcAttachPin(PIN_QUARTO, PWM_CHANNEL);
+
+  WiFi.begin(ssid, password);
+
+  espClient.setInsecure();
+
+  client.setServer(mqtt_server, mqtt_port);
+  client.setCallback(callback);
+}
+
+void loop() {
+  unsigned long now = millis();
+
+  // Gestão de conexão não bloqueante
+  if (!client.connected()) {
+
+    if (now - lastReconnectAttempt > RECONNECT_INTERVAL) {
+
+      lastReconnectAttempt = now;
+
+      if (connectMQTT())
+        lastReconnectAttempt = 0;
+    }
+
+  } else {
+    client.loop();
+  }
+
+  // Envio de temperatura não bloqueante
+  if (now - lastTempMsg > TEMP_INTERVAL) {
+
+    lastTempMsg = now;
+
+    if (client.connected()) {
+
+      char tempString[8];
+
+      dtostrf(readTemperature(), 1, 2, tempString);
+
+      client.publish(topic_temp, tempString);
+    }
+  }
+}
