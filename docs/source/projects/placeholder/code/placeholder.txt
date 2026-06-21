@@ -1,0 +1,21 @@
+// ==========================================
+// Placeholder Arduino Project: LED Blink
+// ==========================================
+
+const int LED_PIN = LED_BUILTIN;
+const int INTERVAL = 1000;
+
+void setup() {
+  pinMode(LED_PIN, OUTPUT);
+  Serial.begin(115200);
+  Serial.println("Placeholder project started: Blink");
+}
+
+void loop() {
+  digitalWrite(LED_PIN, HIGH);
+  Serial.println("LED ON");
+  delay(INTERVAL);
+  digitalWrite(LED_PIN, LOW);
+  Serial.println("LED OFF");
+  delay(INTERVAL);
+}

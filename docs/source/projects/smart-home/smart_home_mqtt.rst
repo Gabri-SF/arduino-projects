@@ -75,11 +75,48 @@ Smart Home Control (MQTT)
 
       Todos os tópicos seguem o padrão: `home/[room]/[device]`.
 
+User Interface
+--------------
+
+.. tab-set::
+
+   .. tab-item:: English
+
+      Below you can see the login page on the left and the main user interface on the right. Access is secure, and the main interface allows you to manage devices and monitor the system in real-time.
+
+      .. list-table:: 
+         :widths: 30 70
+         :class: borderless
+
+         * - .. image:: images/Login_Page.png
+               :width: 95%
+               :alt: Login Page
+
+           - .. image:: images/Main_Page.png
+               :width: 100%
+               :alt: Main Page
+
+   .. tab-item:: Português 
+
+      Abaixo podes ver a página de login à esquerda e a interface principal do utilizador à direita. O acesso é seguro e a interface principal permite gerir os dispositivos e monitorizar o sistema em tempo real.
+
+      .. list-table:: 
+         :widths: 30 70
+         :class: borderless
+
+         * - .. image:: images/Login_Page.png
+               :width: 95%
+               :alt: Página de Login
+
+           - .. image:: images/Main_Page.png
+               :width: 100%
+               :alt: Página Principal
+
 Arduino Code
 ------------
 
 The following code demonstrates how the Arduino Nano ESP32 connects to the MQTT broker and handles commands:
 
-.. literalinclude:: ../../smart-home.txt
+.. literalinclude:: code/smart-home.txt
    :language: cpp
    :linenos:

@@ -46,6 +46,6 @@ Arduino Code
 
 Below is the complete code for the standalone thermal monitor:
 
-.. literalinclude:: ../../temperature.txt
+.. literalinclude:: code/temperature.txt
    :language: cpp
    :linenos:

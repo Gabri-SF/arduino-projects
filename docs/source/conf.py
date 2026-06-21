@@ -6,7 +6,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'Smart Home Documentation'
+project = 'Arduino Projects Documentation'
 copyright = '2026, Gabriel Faria'
 author = 'Gabriel Faria'
 release = '0.0.1'
@@ -28,6 +28,7 @@ exclude_patterns = []
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'furo'
+html_title = 'Arduino Projects Documentation 0.0.1'
 html_static_path = ['_static']
 html_css_files = [
     'custom.css',
