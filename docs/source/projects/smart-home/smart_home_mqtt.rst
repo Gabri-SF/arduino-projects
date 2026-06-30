@@ -26,6 +26,8 @@ Smart Home Control (MQTT)
          - Robust authentication via Google (NextAuth.js).
          - Middleware protection for routes and APIs.
          - Restricted access via email whitelist.
+         - Google OAuth consent screen kept in **Testing** mode, with only authorized family email addresses listed as test users — any Google account not on the list is blocked at the OAuth level before even reaching the application.
+         - Authorized redirect URIs in Google Cloud Console are scoped exclusively to the production domain, preventing OAuth flows from being initiated from unauthorized origins or third-party environments.
 
       2. **Real-time Control**
          - Bi-directional communication using the `useMqtt` hook.
@@ -62,6 +64,8 @@ Smart Home Control (MQTT)
          - Autenticação robusta via Google (NextAuth.js).
          - Proteção por middleware para rotas e APIs.
          - Acesso restrito via whitelist de email.
+         - O ecrã de consentimento OAuth do Google mantido em modo **Testing**, com apenas os emails da família autorizados como utilizadores de teste — qualquer conta Google que não esteja na lista é bloqueada ao nível do OAuth, antes sequer de chegar à aplicação.
+         - Os URIs de redirecionamento autorizados na Google Cloud Console estão configurados exclusivamente para o domínio de produção, impedindo que fluxos OAuth sejam iniciados a partir de origens não autorizadas ou ambientes externos.
 
       2. **Controlo em Tempo Real**
          - Comunicação bi-direcional usando o hook `useMqtt`.
