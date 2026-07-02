@@ -23,6 +23,7 @@ Smart Home Control (MQTT)
       **Implemented Features**
 
       1. **Security & Access**
+
          - Robust authentication via Google (NextAuth.js).
          - Middleware protection for routes and APIs.
          - Restricted access via email whitelist.
@@ -30,10 +31,12 @@ Smart Home Control (MQTT)
          - Authorized redirect URIs in Google Cloud Console are scoped exclusively to the production domain, preventing OAuth flows from being initiated from unauthorized origins or third-party environments.
 
       2. **Real-time Control**
+
          - Bi-directional communication using the `useMqtt` hook.
          - Centralized device logic in `src/lib/devices.ts`.
 
       3. **Dashboard UI**
+
          - "Industrial Dark" aesthetics with glassmorphism.
          - Custom components: `DeviceSwitch`, `DeviceSlider`, `TempSensor`, and `TempChart`.
 
@@ -61,6 +64,7 @@ Smart Home Control (MQTT)
       **Funcionalidades Implementadas**
 
       1. **Segurança & Acesso**
+
          - Autenticação robusta via Google (NextAuth.js).
          - Proteção por middleware para rotas e APIs.
          - Acesso restrito via whitelist de email.
@@ -68,10 +72,12 @@ Smart Home Control (MQTT)
          - Os URIs de redirecionamento autorizados na Google Cloud Console estão configurados exclusivamente para o domínio de produção, impedindo que fluxos OAuth sejam iniciados a partir de origens não autorizadas ou ambientes externos.
 
       2. **Controlo em Tempo Real**
+
          - Comunicação bi-direcional usando o hook `useMqtt`.
          - Lógica de dispositivos centralizada em `src/lib/devices.ts`.
 
       3. **Interface do Dashboard**
+
          - Estética "Industrial Dark" com glassmorphism.
          - Componentes customizados: `DeviceSwitch`, `DeviceSlider`, `TempSensor`, e `TempChart`.
 
