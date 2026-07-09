@@ -26,6 +26,14 @@ Hardware Setup & Temperature Sensing
       .. important::
          When using the Steinhart-Hart equation, temperatures must be handled in **Kelvin**. Conversion to Celsius should only be done at the final step.
 
+      **Wiring Diagram**
+
+      The image below shows how to wire the LEDs (pins D8, D9, D10), the thermistor voltage divider (pin A0), and the ESP32 Nano together:
+
+      .. image:: images/circuit_diagram.png
+         :width: 80%
+         :alt: Smart Home circuit wiring diagram
+
    .. tab-item:: Português
 
       A base deste projeto é a medição de temperatura usando um termistor NTC (Negative Temperature Coefficient) de 10Kohm.
@@ -47,6 +55,14 @@ Hardware Setup & Temperature Sensing
 
       .. important::
          Ao usar a equação de Steinhart-Hart, as temperaturas devem ser tratadas em **Kelvin**. A conversão para Celsius deve ser feita apenas no passo final.
+
+      **Diagrama de Ligações**
+
+      A imagem abaixo mostra como ligar os LEDs (pinos D8, D9, D10), o divisor de tensão do termistor (pino A0), e o ESP32 Nano:
+
+      .. image:: images/circuit_diagram.png
+         :width: 80%
+         :alt: Diagrama de ligações do circuito Smart Home
 
 .. code-block:: cpp
 
