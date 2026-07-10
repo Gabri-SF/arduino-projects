@@ -122,6 +122,55 @@ User Interface
                :width: 100%
                :alt: Página Principal
 
+Device Status: Online / Offline
+--------------------------------
+
+.. tab-set::
+
+   .. tab-item:: English
+
+      The dashboard tracks whether the ESP32 is actually reachable through a dedicated ``home/status/esp32`` topic, separate from the MQTT broker connection itself. Early on, the sketch never published to this topic, so the dashboard showed every device as **OFFLINE** and blocked all controls, even though the broker connection was healthy and temperature readings kept arriving on their own topic.
+
+      .. list-table::
+         :widths: 50 50
+         :class: borderless
+
+         * - .. image:: images/Device_Offline_Before_Fix.png
+               :width: 100%
+               :alt: Dashboard incorrectly showing the device offline
+
+           - .. image:: images/Main_Page.png
+               :width: 100%
+               :alt: Dashboard correctly showing the device online
+
+      The fix uses MQTT's **Last Will and Testament (LWT)**: on connect, the ESP32 registers a retained ``OFFLINE`` will message on ``home/status/esp32`` and immediately publishes a retained ``ONLINE`` message of its own. If the device drops off ungracefully, the broker publishes the will automatically. Retaining both messages ensures the dashboard gets the correct status as soon as it subscribes, without waiting for the next state change.
+
+      .. image:: images/HiveMQ_Status_Messages.png
+         :width: 90%
+         :alt: HiveMQ web client showing the retained ONLINE status message and temperature readings
+
+   .. tab-item:: Português
+
+      O dashboard verifica se o ESP32 está de facto acessível através de um tópico dedicado, ``home/status/esp32``, separado da própria ligação ao broker MQTT. Inicialmente, o sketch nunca publicava neste tópico, pelo que o dashboard mostrava todos os dispositivos como **OFFLINE** e bloqueava os controlos, mesmo com a ligação ao broker saudável e as leituras de temperatura a chegar normalmente no seu próprio tópico.
+
+      .. list-table::
+         :widths: 50 50
+         :class: borderless
+
+         * - .. image:: images/Device_Offline_Before_Fix.png
+               :width: 100%
+               :alt: Dashboard a mostrar incorretamente o dispositivo offline
+
+           - .. image:: images/Main_Page.png
+               :width: 100%
+               :alt: Dashboard a mostrar corretamente o dispositivo online
+
+      A correção usa o **Last Will and Testament (LWT)** do MQTT: ao ligar, o ESP32 regista uma mensagem de will retida ``OFFLINE`` em ``home/status/esp32`` e publica de imediato uma mensagem retida ``ONLINE`` própria. Se o dispositivo cair de forma abrupta, o broker publica o will automaticamente. Reter ambas as mensagens garante que o dashboard recebe o estado correto assim que subscreve o tópico, sem esperar pela próxima mudança de estado.
+
+      .. image:: images/HiveMQ_Status_Messages.png
+         :width: 90%
+         :alt: Cliente web do HiveMQ a mostrar a mensagem retida ONLINE e as leituras de temperatura
+
 Arduino Code
 ------------
 
